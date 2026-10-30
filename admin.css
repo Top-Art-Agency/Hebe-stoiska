@@ -102,3 +102,4 @@
 .r-row .iconbtn{width:34px;height:34px}
 .ed .r-row select,.ed .r-row input{min-width:0}
 .ed select{font:400 14px var(--body);color:var(--ink);background:var(--field);border:1px solid var(--line);border-radius:5px;padding:9px 10px;width:100%}
+.adm{padding-top:84px}
