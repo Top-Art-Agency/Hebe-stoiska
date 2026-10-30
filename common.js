@@ -38,8 +38,10 @@ export function getFb() {
     const appM = await import(`${SDK}/firebase-app.js`);
     const fs = await import(`${SDK}/firebase-firestore.js`);
     const app = appM.initializeApp(CFG.FIREBASE_CONFIG);
+    // Pamięć podręczna tylko w bieżącej karcie. Wspólna pamięć między kartami powodowała,
+    // że karta katalogu (bez logowania) obsługiwała zapytania karty panelu i baza odmawiała dostępu.
     let db;
-    try { db = fs.initializeFirestore(app, { localCache: fs.persistentLocalCache({ tabManager: fs.persistentMultipleTabManager() }) }); }
+    try { db = fs.initializeFirestore(app, { localCache: fs.memoryLocalCache() }); }
     catch (e) { db = fs.getFirestore(app); }
     return { app, db, fs };
   })();

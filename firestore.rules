@@ -5,12 +5,13 @@ rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
 
-    // Konta administratorów (Authentication → Users → User UID). Nowego admina dopisz do listy.
+    // Administratorzy rozpoznawani po adresie e-mail konta (Authentication → Users).
+    // Nowego admina: załóż mu konto w Authentication i dopisz jego e-mail do listy (małymi literami).
     function isAdmin() {
-      return request.auth != null && request.auth.uid in [
-        'lllJYTFWmpQsKHsptFWOq9MX0qa2',
-        'AeT3oaNc1kTLWC7zBRL4Lqg4FB02',
-        '17PvBaRF5MNlSNfeRLKGwrNYGSF3'
+      return request.auth != null && request.auth.token.email in [
+        'adam.j@topart.pl',
+        'michal.c@topart.pl',
+        'irena.d@topart.pl'
       ];
     }
 
