@@ -18,8 +18,8 @@ export const FIREBASE_CONFIG = {
 
 // 2) Klucz z https://web3forms.com (przychodzi mailem po wpisaniu Twojego adresu).
 //    Zapytania trafią na adres, dla którego wygenerowano klucz.
-export const WEB3FORMS_KEY = "";
+export const WEB3FORMS_KEY = "06d4994c-d9bd-46be-958a-acb3a33fd966";
 
 // 3) Dane firmy pokazywane klientom
-export const FIRMA_NAZWA = "Twoja Firma";
-export const FIRMA_EMAIL = "zamowienia@twojafirma.pl";
+export const FIRMA_NAZWA = "Top Art Agency";
+export const FIRMA_EMAIL = "adam.topart@gmail.com";
