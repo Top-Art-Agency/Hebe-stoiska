@@ -45,7 +45,7 @@ $("logout").addEventListener("click", () => A.am.signOut(A.auth));
 
 function denied(x) {
   if (x && x.code === "permission-denied") {
-    $("noAccess").innerHTML = `To konto nie ma uprawnień administratora. Wpisz jego UID w pliku <code>firestore.rules</code> i opublikuj reguły w konsoli Firebase. UID: <code>${esc(A.auth.currentUser?.uid)}</code>`;
+    $("noAccess").innerHTML = `Konto <code>${esc(A.auth.currentUser?.email)}</code> nie ma uprawnień administratora. Dopisz ten adres do listy w pliku <code>firestore.rules</code> i opublikuj reguły w konsoli Firebase.`;
     $("noAccess").hidden = false; return true;
   }
   return false;
