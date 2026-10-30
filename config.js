@@ -8,12 +8,12 @@
 //    Wklej tu obiekt firebaseConfig. Dopóki projectId jest pusty,
 //    katalog działa w trybie demo na przykładowych danych.
 export const FIREBASE_CONFIG = {
-  apiKey: "",
-  authDomain: "",
-  projectId: "",
-  storageBucket: "",
-  messagingSenderId: "",
-  appId: "",
+  apiKey: "AIzaSyB0vFn4TicrWIm8vdHnJsASEcJSbKHoSww",
+  authDomain: "hebe-stoiska.firebaseapp.com",
+  projectId: "hebe-stoiska",
+  storageBucket: "hebe-stoiska.firebasestorage.app",
+  messagingSenderId: "944216883372",
+  appId: "1:944216883372:web:6dbf0ad545b2b7645c5f09",
 };
 
 // 2) Klucz z https://web3forms.com (przychodzi mailem po wpisaniu Twojego adresu).

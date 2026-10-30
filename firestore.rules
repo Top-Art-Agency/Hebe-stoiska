@@ -5,10 +5,13 @@ rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
 
-    // >>> WPISZ TU UID SWOJEGO KONTA ADMINA (Authentication → Użytkownicy → kolumna "UID użytkownika").
-    // Kilku adminów: ['UID_1', 'UID_2']
+    // Konta administratorów (Authentication → Users → User UID). Nowego admina dopisz do listy.
     function isAdmin() {
-      return request.auth != null && request.auth.uid in ['WPISZ_UID_ADMINA'];
+      return request.auth != null && request.auth.uid in [
+        'lllJYTFWmpQsKHsptFWOq9MX0qa2',
+        'AeT3oaNc1kTLWC7zBRL4Lqg4FB02',
+        '17PvBaRF5MNlSNfeRLKGwrNYGSF3'
+      ];
     }
 
     function isDay(v) {
