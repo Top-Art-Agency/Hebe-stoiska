@@ -38,6 +38,7 @@
     <nav class="tabs" role="tablist">
       <button role="tab" type="button" data-tab="items" aria-selected="true">Pozycje <span class="count" id="cItems"></span></button>
       <button role="tab" type="button" data-tab="orders" aria-selected="false">Zapytania <span class="count new" id="cOrders" hidden></span></button>
+      <button role="tab" type="button" data-tab="res" aria-selected="false">Rezerwacje <span class="count" id="cRes"></span></button>
       <button role="tab" type="button" data-tab="settings" aria-selected="false">Ustawienia</button>
     </nav>
 
@@ -60,6 +61,15 @@
         <select id="oFilter" aria-label="Filtr statusu"><option value="">Wszystkie statusy</option><option value="nowe">Nowe – wstępna rezerwacja</option><option value="zaakceptowane">Zaakceptowane</option><option value="zakonczone">Zakończone</option><option value="odrzucone">Odrzucone</option></select>
       </div>
       <div id="orders" class="orders"><p class="muted">Wczytuję…</p></div>
+    </section>
+
+    <section id="tab-res" hidden>
+      <div class="bar">
+        <button class="btn sm" type="button" id="addRes">Dodaj rezerwację</button>
+        <select id="rFilter" aria-label="Które rezerwacje"><option value="next">Bieżące i nadchodzące</option><option value="past">Minione</option><option value="all">Wszystkie</option></select>
+      </div>
+      <p class="note">Rezerwacje widzą klienci w katalogu (nazwa wydarzenia, daty, liczby sztuk). Dane kontaktowe są tylko w zakładce Zapytania. Własne wydarzenia, serwis czy wypożyczenia poza katalogiem dodasz przyciskiem „Dodaj rezerwację”.</p>
+      <div id="resList" class="orders"><p class="muted">Wczytuję…</p></div>
     </section>
 
     <section id="tab-settings" hidden>
@@ -112,6 +122,31 @@
       <button class="btn" type="submit" id="edSave">Zapisz</button>
       <button class="btn ghost" type="button" id="edCancel">Anuluj</button>
       <button class="btn danger close" type="button" id="edDelete">Usuń pozycję</button>
+    </div>
+  </form>
+</div>
+<!-- Edycja rezerwacji -->
+<div class="sheet" id="resEditor" hidden role="dialog" aria-modal="true" aria-labelledby="rTitle">
+  <form class="sheet-box ed" id="rForm" novalidate>
+    <header><h2 id="rTitle">Rezerwacja</h2><p class="note" id="rLinked" hidden></p></header>
+    <div class="inner">
+      <div class="ed-fields r-fields">
+        <label class="full">Nazwa wydarzenia<input id="r-event" required placeholder="np. Targi Kosmetyczne, Warszawa"></label>
+        <label>Pierwszy dzień wydarzenia<input id="r-from" type="date" required></label>
+        <label>Ostatni dzień wydarzenia<input id="r-to" type="date"></label>
+        <label>Rezerwacja od (z montażem)<input id="r-resFrom" type="date" required></label>
+        <label>Rezerwacja do (z demontażem)<input id="r-resTo" type="date" required></label>
+        <label>Status<select id="r-status"><option value="wstepna">wstępna</option><option value="potwierdzona">potwierdzona</option></select></label>
+      </div>
+      <h3 class="r-h">Elementy</h3>
+      <div id="r-items" class="r-items"></div>
+      <button class="btn ghost sm" type="button" id="r-addItem">Dodaj element</button>
+      <p class="err" id="rErr" hidden></p>
+    </div>
+    <div class="sheet-actions">
+      <button class="btn" type="submit" id="rSave">Zapisz</button>
+      <button class="btn ghost" type="button" id="rCancel">Anuluj</button>
+      <button class="btn danger close" type="button" id="rDelete">Usuń rezerwację</button>
     </div>
   </form>
 </div>

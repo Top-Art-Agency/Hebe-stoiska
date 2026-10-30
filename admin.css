@@ -91,3 +91,16 @@
 .order.st-nowe{border-left:3px solid var(--warn)}
 .order.st-zaakceptowane{border-left:3px solid var(--ok)}
 .order.st-odrzucone{opacity:.65}
+
+/* rezerwacje */
+.pill{font:500 11px var(--body);padding:1px 8px;border-radius:999px;background:var(--accent-soft);color:var(--ink);white-space:nowrap;vertical-align:middle}
+.pill.wstepna{background:var(--warn-soft);color:var(--warn)}
+.pill.now{background:var(--ok);color:var(--surface)}
+.order.res.st-wstepna{border-left:3px solid var(--warn)}
+.order.res.st-potwierdzona{border-left:3px solid var(--ok)}
+.r-h{font:600 14px var(--body);margin:16px 0 8px}
+.r-items{display:grid;gap:8px;margin-bottom:10px}
+.r-row{display:grid;grid-template-columns:minmax(0,1fr) 80px 34px;gap:8px;align-items:center}
+.r-row .iconbtn{width:34px;height:34px}
+.ed .r-row select,.ed .r-row input{min-width:0}
+.ed select{font:400 14px var(--body);color:var(--ink);background:var(--bg);border:1px solid var(--line);border-radius:5px;padding:9px 10px;width:100%}

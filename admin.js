@@ -1,9 +1,10 @@
 /* Panel administratora: logowanie, pozycje, zapytania, ustawienia */
-import { CONFIGURED, getFb, getAuth, loadSettings, zl, esc, pic, ILL, byOrder, DEFAULT_SETTINGS, ORDER_STATUS, fmtRange, hasStock } from "./common.js";
+import { CONFIGURED, getFb, getAuth, loadSettings, zl, esc, pic, ILL, byOrder, DEFAULT_SETTINGS, ORDER_STATUS, fmtRange, hasStock, RES_STATUS, todayStr, addDays, isDate } from "./common.js";
 
 const $ = id => document.getElementById(id);
 let fb = null, A = null;
-let items = [], editing = null, edImg = "", unsubOrders = null;
+let items = [], editing = null, edImg = "", unsubOrders = null, unsubRes = null;
+let SETS = { ...DEFAULT_SETTINGS }, resList = [], resEditing = null;
 
 /* ---------- start ---------- */
 (async () => {
@@ -13,6 +14,7 @@ let items = [], editing = null, edImg = "", unsubOrders = null;
     $("login").hidden = !!user; $("app").hidden = !user; $("who").hidden = !user;
     $("noAccess").hidden = true;
     if (unsubOrders) { unsubOrders(); unsubOrders = null; }
+    if (unsubRes) { unsubRes(); unsubRes = null; }
     if (user) { $("whoEmail").textContent = user.email; startApp(user); }
   });
 })();
@@ -53,13 +55,14 @@ function denied(x) {
 document.querySelector(".tabs").addEventListener("click", e => {
   const b = e.target.closest("[data-tab]"); if (!b) return;
   document.querySelectorAll(".tabs button").forEach(x => x.setAttribute("aria-selected", String(x === b)));
-  for (const t of ["items", "orders", "settings"]) $("tab-" + t).hidden = t !== b.dataset.tab;
+  for (const t of ["items", "orders", "res", "settings"]) $("tab-" + t).hidden = t !== b.dataset.tab;
 });
 
 async function startApp() {
   await reloadItems();
   watchOrders();
-  const s = await loadSettings();
+  watchRes();
+  const s = await loadSettings(); SETS = s;
   $("s-days").value = s.dniWCenie; $("s-extra").value = Math.round(s.doplataDzien * 100); $("s-vat").value = Math.round(s.vat * 100);
   $("s-before").value = s.zapasPrzed; $("s-after").value = s.zapasPo;
 }
@@ -222,7 +225,7 @@ function watchOrders() {
   const q = fb.fs.query(fb.fs.collection(fb.db, "zapytania"), fb.fs.orderBy("created", "desc"), fb.fs.limit(300));
   unsubOrders = fb.fs.onSnapshot(q, snap => {
     orders = snap.docs.map(d => ({ _id: d.id, ...d.data() }));
-    renderOrders();
+    renderOrders(); renderRes();
   }, x => { denied(x); $("orders").innerHTML = `<p class="muted">Nie udało się wczytać zapytań.</p>`; });
 }
 const fmtDate = ts => ts?.toDate ? ts.toDate().toLocaleString("pl-PL", { dateStyle: "medium", timeStyle: "short" }) : "przed chwilą";
@@ -263,7 +266,9 @@ async function setStatus(o, status) {
   const batch = fs.writeBatch(db);
   batch.update(fs.doc(db, "zapytania", o._id), { status });
   const rref = fs.doc(db, "rezerwacje", o._id);
+  const existing = status === "odrzucone" ? null : await fs.getDoc(rref);
   if (status === "odrzucone") batch.delete(rref);
+  else if (existing && existing.exists()) batch.update(rref, { status: status === "nowe" ? "wstepna" : "potwierdzona" });
   else if (o.resFrom) batch.set(rref, {
     status: status === "nowe" ? "wstepna" : "potwierdzona",
     event: (o.event || o.company || o.name || "Wydarzenie").slice(0, 190),
@@ -298,12 +303,151 @@ $("orders").addEventListener("change", async e => {
   catch (x) { s.value = o.status; if (!denied(x)) alertBar(`Nie udało się zmienić statusu (${x.code || x.message}).`); }
 });
 
+/* ---------- rezerwacje ---------- */
+function watchRes() {
+  unsubRes = fb.fs.onSnapshot(fb.fs.collection(fb.db, "rezerwacje"), snap => {
+    resList = snap.docs.map(d => ({ _id: d.id, ...d.data() }));
+    renderRes();
+  }, x => { denied(x); $("resList").innerHTML = `<p class="muted">Nie udało się wczytać rezerwacji.</p>`; });
+}
+const itemName = id => { const it = items.find(i => i._id === id); return it ? it.name : "(usunięta pozycja)"; };
+function renderRes() {
+  const today = todayStr(), f = $("rFilter").value;
+  const upcoming = resList.filter(r => r.resTo >= today);
+  $("cRes").textContent = upcoming.length || "";
+  let list = f === "next" ? upcoming : f === "past" ? resList.filter(r => r.resTo < today) : resList.slice();
+  list.sort((a, b) => (a.resFrom < b.resFrom ? -1 : 1) * (f === "past" ? -1 : 1));
+  if (!list.length) {
+    $("resList").innerHTML = `<p class="muted">${f === "past" ? "Brak minionych rezerwacji." : "Brak rezerwacji. Pojawią się, gdy klient wyśle zapytanie, albo dodaj je ręcznie."}</p>`;
+    return;
+  }
+  $("resList").innerHTML = list.map(r => {
+    const o = orders.find(x => x._id === r._id);
+    const its = (r.items || []).map(i => `${i.qty}× ${esc(itemName(i.id))}`).join(", ");
+    const now = r.resFrom <= today && r.resTo >= today;
+    return `<article class="order res st-${esc(r.status)}" data-id="${esc(r._id)}">
+      <div class="o-head">
+        <div class="o-who">${esc(r.event)} <span class="pill ${esc(r.status)}">${RES_STATUS[r.status] || esc(r.status)}</span>${now ? ` <span class="pill now">trwa teraz</span>` : ""}</div>
+      </div>
+      <div class="o-term"><b>${fmtRange(r.dateFrom, r.dateTo)}</b> · rezerwacja ${fmtRange(r.resFrom, r.resTo)}</div>
+      <div class="o-meta">${o ? `z zapytania: ${esc(o.name)}${o.company ? " · " + esc(o.company) : ""}` : "dodana ręcznie"}</div>
+      <div class="o-items">${its || "—"}</div>
+      <div class="o-actions">
+        ${r.status === "wstepna" ? `<button class="btn sm" type="button" data-act="confirm">Potwierdź</button>` : ""}
+        <button class="btn ghost sm" type="button" data-act="edit">Edytuj</button>
+        <button class="btn danger sm" type="button" data-act="del">Usuń</button>
+      </div>
+    </article>`;
+  }).join("");
+}
+$("rFilter").addEventListener("change", renderRes);
+
+/** Usuwa rezerwację; powiązane zapytanie w toku oznacza jako odrzucone, żeby się nie odtworzyła */
+async function deleteRes(r) {
+  const { fs, db } = fb; const batch = fs.writeBatch(db);
+  batch.delete(fs.doc(db, "rezerwacje", r._id));
+  const o = orders.find(x => x._id === r._id);
+  if (o && (o.status === "nowe" || o.status === "zaakceptowane")) batch.update(fs.doc(db, "zapytania", o._id), { status: "odrzucone" });
+  await batch.commit();
+}
+$("resList").addEventListener("click", async e => {
+  const b = e.target.closest("[data-act]"); if (!b) return;
+  const r = resList.find(x => x._id === b.closest(".order").dataset.id); if (!r) return;
+  const act = b.dataset.act;
+  try {
+    if (act === "edit") return openResEditor(r);
+    if (act === "confirm") {
+      b.disabled = true;
+      const { fs, db } = fb; const batch = fs.writeBatch(db);
+      batch.update(fs.doc(db, "rezerwacje", r._id), { status: "potwierdzona" });
+      const o = orders.find(x => x._id === r._id);
+      if (o && o.status === "nowe") batch.update(fs.doc(db, "zapytania", o._id), { status: "zaakceptowane" });
+      await batch.commit();
+    }
+    if (act === "del") {
+      const o = orders.find(x => x._id === r._id);
+      if (!b.classList.contains("armed")) { b.classList.add("armed"); b.textContent = o ? "Na pewno? Zapytanie będzie odrzucone" : "Na pewno?"; return; }
+      await deleteRes(r);
+    }
+  } catch (x) { b.disabled = false; if (!denied(x)) alertBar(`Nie udało się zapisać (${x.code || x.message}).`); }
+});
+
+/* edytor rezerwacji */
+function itemOptions(sel) {
+  return items.map(it => `<option value="${esc(it._id)}" ${it._id === sel ? "selected" : ""}>${esc(it.kod)} – ${esc(it.name)}${hasStock(it) ? ` (stan ${it.stock})` : ""}</option>`).join("");
+}
+function addResRow(id = "", qty = 1) {
+  const row = document.createElement("div"); row.className = "r-row";
+  row.innerHTML = `<select class="r-it" aria-label="Element">${itemOptions(id || items[0]?._id)}</select>
+    <input class="r-q" type="number" min="1" step="1" value="${Number(qty) || 1}" aria-label="Liczba">
+    <button class="iconbtn" type="button" data-rm aria-label="Usuń element">×</button>`;
+  $("r-items").appendChild(row);
+}
+function fillBuffer() {
+  const from = $("r-from").value, to = $("r-to").value && $("r-to").value >= from ? $("r-to").value : from;
+  if (!isDate(from)) return;
+  $("r-resFrom").value = addDays(from, -SETS.zapasPrzed);
+  $("r-resTo").value = addDays(to, SETS.zapasPo);
+}
+function openResEditor(r) {
+  resEditing = r || null;
+  $("rTitle").textContent = r ? "Edytuj rezerwację" : "Nowa rezerwacja";
+  $("r-event").value = r?.event || ""; $("r-from").value = r?.dateFrom || ""; $("r-to").value = r && r.dateTo !== r.dateFrom ? r.dateTo : "";
+  $("r-resFrom").value = r?.resFrom || ""; $("r-resTo").value = r?.resTo || ""; $("r-status").value = r?.status || "potwierdzona";
+  const o = r && orders.find(x => x._id === r._id);
+  $("rLinked").hidden = !o; $("rLinked").textContent = o ? `Powiązana z zapytaniem: ${o.name}${o.company ? ", " + o.company : ""}. Zmiany dotyczą tylko rezerwacji.` : "";
+  $("r-items").innerHTML = ""; (r?.items?.length ? r.items : [{}]).forEach(i => addResRow(i.id, i.qty));
+  $("rDelete").hidden = !r; $("rDelete").classList.remove("armed"); $("rDelete").textContent = "Usuń rezerwację";
+  $("rErr").hidden = true; $("resEditor").hidden = false; $("r-event").focus();
+}
+$("addRes").addEventListener("click", () => {
+  if (!items.length) { alertBar("Najpierw dodaj pozycje do katalogu."); return; }
+  openResEditor(null);
+});
+$("r-from").addEventListener("change", fillBuffer);
+$("r-to").addEventListener("change", fillBuffer);
+$("r-addItem").addEventListener("click", () => addResRow());
+$("r-items").addEventListener("click", e => { if (e.target.closest("[data-rm]")) e.target.closest(".r-row").remove(); });
+$("rCancel").addEventListener("click", () => $("resEditor").hidden = true);
+$("resEditor").addEventListener("click", e => { if (e.target.id === "resEditor") $("resEditor").hidden = true; });
+document.addEventListener("keydown", e => { if (e.key === "Escape") $("resEditor").hidden = true; });
+$("rForm").addEventListener("submit", async e => {
+  e.preventDefault();
+  const err = $("rErr"); const fail = m => { err.textContent = m; err.hidden = false; };
+  const from = $("r-from").value, to = $("r-to").value || from, rf = $("r-resFrom").value, rt = $("r-resTo").value;
+  const merged = {};
+  for (const row of $("r-items").querySelectorAll(".r-row")) {
+    const id = row.querySelector(".r-it").value, q = Math.round(Number(row.querySelector(".r-q").value) || 0);
+    if (id && q > 0) merged[id] = (merged[id] || 0) + q;
+  }
+  const list = Object.entries(merged).map(([id, qty]) => ({ id, qty }));
+  if (!$("r-event").value.trim()) return fail("Wpisz nazwę wydarzenia.");
+  if (!isDate(from)) return fail("Wybierz pierwszy dzień wydarzenia.");
+  if (to < from) return fail("Ostatni dzień nie może być przed pierwszym.");
+  if (!isDate(rf) || !isDate(rt) || rf > from || rt < to) return fail("Okres rezerwacji musi obejmować całe wydarzenie.");
+  if (!list.length) return fail("Dodaj co najmniej jeden element.");
+  const data = { event: $("r-event").value.trim().slice(0, 190), dateFrom: from, dateTo: to, resFrom: rf, resTo: rt, status: $("r-status").value, items: list };
+  const btn = $("rSave"); btn.disabled = true; btn.textContent = "Zapisuję…";
+  try {
+    if (resEditing) await fb.fs.updateDoc(fb.fs.doc(fb.db, "rezerwacje", resEditing._id), data);
+    else await fb.fs.addDoc(fb.fs.collection(fb.db, "rezerwacje"), { ...data, created: fb.fs.serverTimestamp() });
+    $("resEditor").hidden = true;
+  } catch (x) { if (denied(x)) $("resEditor").hidden = true; else fail(`Nie udało się zapisać (${x.code || x.message}).`); }
+  btn.disabled = false; btn.textContent = "Zapisz";
+});
+$("rDelete").addEventListener("click", async () => {
+  const b = $("rDelete");
+  if (!b.classList.contains("armed")) { b.classList.add("armed"); b.textContent = "Kliknij ponownie, aby usunąć"; return; }
+  try { await deleteRes(resEditing); $("resEditor").hidden = true; }
+  catch (x) { if (!denied(x)) { $("rErr").textContent = `Nie udało się usunąć (${x.code || x.message}).`; $("rErr").hidden = false; } }
+});
+
 /* ---------- ustawienia ---------- */
 $("settings").addEventListener("submit", async e => {
   e.preventDefault();
   const d = Math.max(1, Math.round(Number($("s-days").value) || 1));
   const data = { dniWCenie: d, doplataDzien: Math.max(0, Number($("s-extra").value) || 0) / 100, vat: Math.max(0, Number($("s-vat").value) || 0) / 100,
     zapasPrzed: Math.max(0, Math.round(Number($("s-before").value) || 0)), zapasPo: Math.max(0, Math.round(Number($("s-after").value) || 0)) };
-  try { await fb.fs.setDoc(fb.fs.doc(fb.db, "ustawienia", "ogolne"), data, { merge: true }); $("s-msg").textContent = "Zapisano. Katalog pokaże nowe wartości po odświeżeniu."; }
+  try { await fb.fs.setDoc(fb.fs.doc(fb.db, "ustawienia", "ogolne"), data, { merge: true }); SETS = { ...SETS, ...data }; $("s-msg").textContent = "Zapisano. Katalog pokaże nowe wartości po odświeżeniu."; }
   catch (x) { if (!denied(x)) $("s-msg").textContent = `Nie udało się zapisać (${x.code || x.message}).`; }
 });

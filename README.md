@@ -20,7 +20,7 @@ Publiczny katalog elementów scenografii targowej. Klient wpisuje termin wydarze
 - `seed.js` – przykładowy katalog do wczytania jednym kliknięciem w panelu
 - `common.js`, `styles.css` – części wspólne
 
-Dopóki `config.js` nie jest uzupełniony, katalog działa w **trybie demo** na przykładowych danych.
+Dopóki `config.js` nie jest uzupełniony, katalog działa w **trybie demo** na przykładowych danych. Dwa wydarzenia z dopiskiem „(przykład)” są wtedy wpisane na stałe w `seed.js` i znikają same po podłączeniu Firebase.
 
 ---
 
@@ -74,6 +74,7 @@ Publicznie widoczne są tylko nazwa wydarzenia, daty i liczby sztuk. Dane kontak
 
 - **Pozycje** – „Edytuj” otwiera formularz: zdjęcie (wgrywane z dysku, automatycznie zmniejszane do ok. 1100 px) albo adres URL zdjęcia, kod, kategoria, nazwa, opis/wymiary, cena netto, jednostka (szt., m², kpl.…), widoczność i „szeroka karta” dla poziomych zdjęć. Przełącznik w tabeli ukrywa pozycję bez usuwania. Strzałki zmieniają kolejność w katalogu.
 - **Zapytania** – lista wysłanych kosztorysów z terminem i pełną treścią, przycisk akceptacji, status (nowe / zaakceptowane / zakończone / odrzucone) i szybka odpowiedź mailem. Zapytania zapisują się tu nawet wtedy, gdy mail by nie doszedł.
+- **Rezerwacje** – wszystkie rezerwacje (bieżące, nadchodzące i minione). Tu je potwierdzasz, edytujesz (nazwa wydarzenia, daty, okres z montażem, elementy i ilości) i usuwasz. Przyciskiem „Dodaj rezerwację” wpiszesz też wydarzenie spoza katalogu, np. własne targi, serwis albo wypożyczenie uzgodnione telefonicznie. Usunięcie rezerwacji z zapytania w toku oznacza to zapytanie jako odrzucone.
 - **Ustawienia** – liczba dni wliczonych w cenę, dopłata za każdy kolejny dzień wydarzenia, stawka VAT, dni zapasu przed i po wydarzeniu.
 
 Nowa kategoria powstaje sama, gdy wpiszesz jej nazwę w pozycji. Kolejność kategorii w katalogu wynika z kolejności pozycji.
