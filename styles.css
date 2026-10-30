@@ -1,23 +1,14 @@
 /* Layout: katalog targowy — siatka elementów po lewej, przypięty "kosztorys stoiska" po prawej (na telefonie: dolny pasek + panel) */
 :root{
-  --bg:#EEF0EE; --surface:#FFFFFF; --ink:#1A1F24; --muted:#5E6870; --line:#D5DAD8;
-  --accent:#2A47C9; --accent-ink:#FFFFFF; --accent-soft:#E2E7FA;
-  --ill-a:#C9CFCC; --ill-b:#8E989C; --ill-c:#2A47C9; --ill-d:#E8E2D6; --ill-leaf:#4F7D5C;
-  --ok:#2F7A4C;
+  /* Kolory marki: tło #F9DCEA, kolor wyboru #EA018C. Jeden jasny motyw niezależnie od ustawień systemu. */
+  --bg:#F9DCEA; --surface:#FFFFFF; --ink:#24161E; --muted:#6F5A66; --line:#EFC9DB;
+  --accent:#EA018C; --accent-ink:#FFFFFF; --accent-soft:#FDE7F2;
+  --ill-a:#D9CDD3; --ill-b:#968890; --ill-c:#EA018C; --ill-d:#EFE4DC; --ill-leaf:#4F7D5C;
+  --ok:#2F7A4C; --field:#FFF6FA; color-scheme:light;
   --display:"Bricolage Grotesque", "Segoe UI", system-ui, sans-serif;
   --body:"IBM Plex Sans", "Segoe UI", system-ui, sans-serif;
   --mono:"IBM Plex Mono", ui-monospace, Menlo, Consolas, monospace;
 }
-@media (prefers-color-scheme: dark){:root:not([data-theme="light"]){
-  --bg:#14181C; --surface:#1D2227; --ink:#E8ECEA; --muted:#9AA4AA; --line:#2E353B;
-  --accent:#7C93F5; --accent-ink:#0E1220; --accent-soft:#232B48;
-  --ill-a:#3A4248; --ill-b:#69757C; --ill-c:#7C93F5; --ill-d:#4A453C; --ill-leaf:#6FA27E;
-  --ok:#6CC08E; color-scheme:dark}}
-:root[data-theme="dark"]{
-  --bg:#14181C; --surface:#1D2227; --ink:#E8ECEA; --muted:#9AA4AA; --line:#2E353B;
-  --accent:#7C93F5; --accent-ink:#0E1220; --accent-soft:#232B48;
-  --ill-a:#3A4248; --ill-b:#69757C; --ill-c:#7C93F5; --ill-d:#4A453C; --ill-leaf:#6FA27E;
-  --ok:#6CC08E; color-scheme:dark}
 
 *{box-sizing:border-box}
 body{background:var(--bg);color:var(--ink);font-family:var(--body);font-size:15px;line-height:1.5}
@@ -34,7 +25,7 @@ h1{font-family:var(--display);font-weight:700;font-size:clamp(30px,5vw,48px);lin
 
 .filters{display:flex;flex-wrap:wrap;gap:8px;margin-bottom:18px}
 .chip{font:500 13px var(--body);border:1px solid var(--line);background:var(--surface);color:var(--ink);padding:7px 13px;border-radius:999px;cursor:pointer}
-.chip[aria-pressed="true"]{background:var(--ink);color:var(--bg);border-color:var(--ink)}
+.chip[aria-pressed="true"]{background:var(--accent);color:var(--accent-ink);border-color:var(--accent)}
 .chip:focus-visible,.btn:focus-visible,.qty button:focus-visible,input:focus-visible,textarea:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
 
 .grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(210px,1fr));grid-auto-flow:row dense;gap:14px}
@@ -50,7 +41,7 @@ h1{font-family:var(--display);font-weight:700;font-size:clamp(30px,5vw,48px);lin
 .stand img{width:34px;height:26px;object-fit:cover;border-radius:3px}
 .toggle{display:inline-flex;border:1px solid var(--line);border-radius:999px;padding:3px;background:var(--surface)}
 .toggle button{font:500 13px var(--body);border:0;background:transparent;color:var(--muted);padding:6px 14px;border-radius:999px;cursor:pointer}
-.toggle button[aria-pressed="true"]{background:var(--ink);color:var(--bg)}
+.toggle button[aria-pressed="true"]{background:var(--accent);color:var(--accent-ink)}
 .toggle button:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
 .toolbar{display:flex;flex-wrap:wrap;justify-content:space-between;align-items:center;gap:12px;margin-bottom:18px}
 .toolbar .filters{margin-bottom:0}
@@ -96,7 +87,7 @@ h1{font-family:var(--display);font-weight:700;font-size:clamp(30px,5vw,48px);lin
 form.client{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:14px}
 form.client label{display:grid;gap:3px;font-size:12px;color:var(--muted);min-width:0}
 form.client .full{grid-column:1/-1}
-form.client input,form.client textarea{font:400 14px var(--body);color:var(--ink);background:var(--bg);border:1px solid var(--line);border-radius:5px;padding:8px 10px;width:100%}
+form.client input,form.client textarea{font:400 14px var(--body);color:var(--ink);background:var(--field);border:1px solid var(--line);border-radius:5px;padding:8px 10px;width:100%}
 form.client textarea{min-height:64px;resize:vertical}
 .err{color:#C0392B;font-size:13px;margin:8px 0 0}
 
@@ -106,7 +97,7 @@ form.client textarea{min-height:64px;resize:vertical}
 .sheet-box header{padding:18px 20px 10px}
 .sheet-box h2{font:700 24px var(--display);margin:0}
 .sheet-box .inner{padding:0 20px;overflow:auto;min-height:0}
-pre.mail{white-space:pre-wrap;word-break:break-word;font:400 12.5px/1.55 var(--mono);background:var(--bg);border:1px solid var(--line);border-radius:6px;padding:12px;margin:10px 0}
+pre.mail{white-space:pre-wrap;word-break:break-word;font:400 12.5px/1.55 var(--mono);background:var(--field);border:1px solid var(--line);border-radius:6px;padding:12px;margin:10px 0}
 .addr{display:flex;flex-wrap:wrap;gap:8px;align-items:center;font-size:14px}
 .addr code{font:500 14px var(--mono);background:var(--accent-soft);padding:3px 8px;border-radius:4px;user-select:all}
 .sheet-actions{display:grid;grid-template-columns:1fr 1fr;gap:10px;padding:14px 20px 20px}
@@ -139,16 +130,14 @@ img{max-width:100%}
 .btn.busy{opacity:.7;cursor:progress}
 
 /* --- termin, dostępność, rezerwacje --- */
-:root{ --warn:#9A6200; --warn-soft:#FBF1DC; --bad:#B4372B; --bad-soft:#FBE6E3; }
-@media (prefers-color-scheme: dark){:root:not([data-theme="light"]){ --warn:#E9B65B; --warn-soft:#3A2F1A; --bad:#F08A7E; --bad-soft:#3D2220; }}
-:root[data-theme="dark"]{ --warn:#E9B65B; --warn-soft:#3A2F1A; --bad:#F08A7E; --bad-soft:#3D2220; }
+:root{ --warn:#9A5A00; --warn-soft:#FDF0D8; --bad:#B42318; --bad-soft:#FEE4E2; }
 
 .term{background:var(--surface);border:1px solid var(--line);border-radius:8px;padding:14px 16px;margin-bottom:12px;display:grid;gap:8px}
 .term-fields{display:flex;flex-wrap:wrap;align-items:end;gap:10px 16px}
 .term h2{font:700 18px var(--display);margin:0 auto 6px 0;flex-basis:100%}
 .term label{display:grid;gap:3px;font-size:12px;color:var(--muted);white-space:nowrap}
 .term .opt{color:var(--muted);font-weight:400}
-.term input{font:500 14px var(--mono);color:var(--ink);background:var(--bg);border:1px solid var(--line);border-radius:5px;padding:8px 10px;min-width:0}
+.term input{font:500 14px var(--mono);color:var(--ink);background:var(--field);border:1px solid var(--line);border-radius:5px;padding:8px 10px;min-width:0}
 .term-info{margin:0;font-size:13px;color:var(--muted)}
 .term-info b{color:var(--ink);font-weight:600}
 .term.flash{box-shadow:0 0 0 2px var(--accent)}

@@ -1,7 +1,5 @@
 /* Panel administratora — korzysta z tokenów ze styles.css */
 :root{ --danger:#B4372B; }
-@media (prefers-color-scheme: dark){:root:not([data-theme="light"]){ --danger:#F08A7E; }}
-:root[data-theme="dark"]{ --danger:#F08A7E; }
 
 .adm{padding-block:24px 60px}
 .adm h1{font-size:clamp(26px,4vw,36px)}
@@ -17,7 +15,7 @@
 .login h2{font:700 24px var(--display);margin:0 0 4px}
 .login label,.settings label,.ed label{display:grid;gap:4px;font-size:12px;color:var(--muted);min-width:0}
 .login input,.settings input,.ed input:not([type=checkbox]):not([type=file]),.ed textarea,.ed select,.bar input,.bar select,.orders select{
-  font:400 14px var(--body);color:var(--ink);background:var(--bg);border:1px solid var(--line);border-radius:5px;padding:9px 10px;width:100%}
+  font:400 14px var(--body);color:var(--ink);background:var(--field);border:1px solid var(--line);border-radius:5px;padding:9px 10px;width:100%}
 .login .linkbtn{justify-self:start}
 
 .tabs{display:flex;gap:4px;margin:22px 0 16px;border-bottom:1px solid var(--line);overflow-x:auto}
@@ -103,4 +101,4 @@
 .r-row{display:grid;grid-template-columns:minmax(0,1fr) 80px 34px;gap:8px;align-items:center}
 .r-row .iconbtn{width:34px;height:34px}
 .ed .r-row select,.ed .r-row input{min-width:0}
-.ed select{font:400 14px var(--body);color:var(--ink);background:var(--bg);border:1px solid var(--line);border-radius:5px;padding:9px 10px;width:100%}
+.ed select{font:400 14px var(--body);color:var(--ink);background:var(--field);border:1px solid var(--line);border-radius:5px;padding:9px 10px;width:100%}
