@@ -1,0 +1,124 @@
+<!doctype html>
+<html lang="pl">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>Katalog stoisk</title>
+<meta name="description" content="Skomponuj stoisko targowe z gotowych elementów i wyślij zapytanie o wizualizację.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,500;12..96,700&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap">
+<link rel="stylesheet" href="styles.css">
+</head>
+<body>
+<div class="wrap">
+  <p class="demo" id="demoBar" hidden data-t="demo">Tryb demo: katalog pokazuje przykładowe dane, a zapytania nie są wysyłane.</p>
+  <header class="top">
+    <div>
+      <img class="logo" src="logo.png" alt="Hebe" width="168" height="62">
+      <div class="eyebrow" data-t="eyebrow">Zabudowa i wyposażenie stoisk · wynajem</div>
+      <h1 data-t="title">Katalog stoisk</h1>
+      <p class="lead" data-t="lead">Wybierz elementy i ich liczbę, a gotową listę wyślesz nam jednym kliknięciem.</p>
+    </div>
+    <div class="top-side">
+      <div class="langs" role="group" aria-label="Język / Language">
+        <button type="button" data-lang="pl" aria-pressed="true" lang="pl">PL</button><button type="button" data-lang="en" aria-pressed="false" lang="en">EN</button>
+      </div>
+      <div class="steps"><span><b>01</b><span data-t="step1">Wybierz elementy</span></span><span><b>02</b><span data-t="step2">Uzupełnij dane</span></span><span><b>03</b><span data-t="step3">Wyślij do nas</span></span></div>
+    </div>
+  </header>
+
+  <div class="layout">
+    <main>
+      <section class="term" id="term" aria-labelledby="termTitle">
+        <div class="term-fields">
+          <h2 id="termTitle" data-t="termTitle">Termin wydarzenia</h2>
+          <label><span data-t="firstDay">Pierwszy dzień</span><input type="date" id="d-from"></label>
+          <label><span><span data-t="lastDay">Ostatni dzień</span> <span class="opt" data-t="optional">(opcjonalnie)</span></span><input type="date" id="d-to"></label>
+        </div>
+        <p class="term-info" id="termInfo"></p>
+      </section>
+
+      <details class="plan" id="plan" hidden>
+        <summary><span data-t="planTitle">Zaplanowane wydarzenia</span> <span class="count" id="planCount"></span></summary>
+        <ul id="planList"></ul>
+      </details>
+
+      <div class="toolbar">
+        <div class="filters" id="filters" role="toolbar" data-t-aria="categories" aria-label="Kategorie"></div>
+      </div>
+      <div class="grid" id="grid"><p class="loading" data-t="loading">Wczytuję katalog…</p></div>
+    </main>
+
+    <aside class="panel" id="panel" aria-labelledby="panelTitle">
+      <div class="panel-head">
+        <h2 id="panelTitle" data-t="panelTitle">Twoje stoisko</h2>
+        <span class="eyebrow" id="countLbl">0 elementów</span>
+        <button class="x-close" id="closePanel" data-t-aria="close" aria-label="Zamknij">×</button>
+      </div>
+      <div class="panel-scroll">
+        <div class="stand" id="stand"></div>
+        <ul class="lines" id="lines"></ul>
+        <button class="linkbtn" type="button" id="clearAll" data-t="clearAll">Wyczyść wszystko</button>
+        <div class="days">
+          <div><span id="cartTerm"></span><span class="sub" id="cartRes"></span></div>
+          <button class="linkbtn" type="button" id="goTerm">Zmień</button>
+        </div>
+        <p class="warnline" id="cartWarn" hidden></p>
+        <p class="note" data-t="priceNote">Wycenę przygotujemy po otrzymaniu zapytania.</p>
+
+        <form class="client" id="client" novalidate>
+          <label><span data-t="fName">Imię i nazwisko*</span><input id="f-name" required autocomplete="name"></label>
+          <label><span data-t="fCompany">Firma</span><input id="f-company" autocomplete="organization"></label>
+          <label><span data-t="fEmail">E-mail*</span><input id="f-email" type="email" required autocomplete="email"></label>
+          <label><span data-t="fPhone">Telefon</span><input id="f-phone" type="tel" autocomplete="tel"></label>
+          <label><span data-t="fEvent">Targi / wydarzenie</span><input id="f-event"></label>
+          <label><span data-t="fSize">Wymiary stoiska (m)</span><input id="f-size" data-t-ph="fSizePh"></label>
+          <label class="full"><span data-t="fNotes">Uwagi do aranżacji</span><textarea id="f-notes" data-t-ph="fNotesPh"></textarea></label>
+          <input type="checkbox" id="f-botcheck" tabindex="-1" autocomplete="off" class="hp" aria-hidden="true">
+        </form>
+        <p class="err" id="err" hidden></p>
+      </div>
+      <div class="panel-foot">
+        <button class="btn" id="sendBtn" type="button" data-t="send">Wyślij zapytanie</button>
+      </div>
+    </aside>
+  </div>
+</div>
+
+<div class="mbar" id="mbar"><b id="mCount">0 elementów</b><button type="button" id="openPanel" data-t="showStand">Twoje stoisko</button></div>
+
+<!-- Potwierdzenie wysyłki -->
+<div class="sheet" id="okSheet" hidden role="dialog" aria-modal="true" aria-labelledby="okTitle">
+  <div class="sheet-box">
+    <header>
+      <h2 id="okTitle" data-t="okTitle">Dziękujemy, zapytanie wysłane</h2>
+      <p class="lead" id="okText"></p>
+    </header>
+    <div class="sheet-actions">
+      <button class="btn" type="button" id="okNew" data-t="okNew">Zacznij nowe stoisko</button>
+      <button class="btn ghost" type="button" id="okClose" data-t="back">Wróć do katalogu</button>
+    </div>
+  </div>
+</div>
+
+<!-- Awaryjnie: gdy wysyłka się nie uda -->
+<div class="sheet" id="sheet" hidden role="dialog" aria-modal="true" aria-labelledby="sheetTitle">
+  <div class="sheet-box">
+    <header>
+      <h2 id="sheetTitle" data-t="fbTitle">Wyślij zapytanie mailem</h2>
+      <p class="note" id="sheetNote"></p>
+      <div class="addr" style="margin-top:10px"><span data-t="address">Adres:</span> <code id="toAddr"></code></div>
+    </header>
+    <div class="inner"><pre class="mail" id="mailText"></pre></div>
+    <div class="sheet-actions">
+      <button class="btn" type="button" id="copyBtn" data-t="copy">Kopiuj treść</button>
+      <a class="btn ghost" id="mailtoBtn" href="#" data-t="openMail">Otwórz w poczcie</a>
+      <p class="toast" id="toast" style="grid-column:1/-1"></p>
+      <button class="btn ghost close" type="button" id="closeSheet" data-t="back">Wróć do katalogu</button>
+    </div>
+  </div>
+</div>
+
+<script type="module" src="app.js"></script>
+</body>
+</html>
