@@ -171,3 +171,17 @@ header.top{align-items:flex-end}
 .top-side{display:flex;flex-direction:column;align-items:flex-end;gap:14px;margin-left:auto}
 .logo{display:block;width:clamp(110px,14vw,168px);height:auto;margin:0 0 14px}
 h1{display:inline-block;color:#FFFFFF;background:var(--accent);padding:.12em .38em .16em;border-radius:6px;margin-top:0}
+
+/* przełącznik języka */
+.langs{display:inline-flex;border:1px solid var(--line);border-radius:999px;padding:3px;background:var(--surface)}
+.langs button{font:600 13px var(--body);border:0;background:transparent;color:var(--muted);padding:5px 12px;border-radius:999px;cursor:pointer;letter-spacing:.04em}
+.langs button[aria-pressed="true"]{background:var(--accent);color:var(--accent-ink)}
+.langs button:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+.row .unit{font:400 12px var(--mono);color:var(--muted)}
+.lines .val{white-space:nowrap}
+.mbar b{font:600 15px var(--body)}
+
+/* przełącznik języka zawsze w prawym górnym rogu nagłówka */
+header.top{position:relative}
+header.top > div:first-child{min-width:0;padding-right:96px}
+.top-side .langs{position:absolute;top:0;right:0}

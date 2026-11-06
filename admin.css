@@ -102,3 +102,13 @@
 .r-row .iconbtn{width:34px;height:34px}
 .ed .r-row select,.ed .r-row input{min-width:0}
 .ed select{font:400 14px var(--body);color:var(--ink);background:var(--field);border:1px solid var(--line);border-radius:5px;padding:9px 10px;width:100%}
+
+.lock{font:500 10px var(--mono);letter-spacing:.06em;text-transform:uppercase;color:var(--accent);margin-left:4px}
+.settings.tools{margin-top:18px}
+.settings h3{font:600 15px var(--body);margin:0}
+.quote{width:100%;border-collapse:collapse;font-size:13px;margin-top:4px}
+.quote td{padding:4px 0;border-bottom:1px solid var(--line)}
+.quote td.num{text-align:right;font-family:var(--mono);font-variant-numeric:tabular-nums;white-space:nowrap;padding-left:12px}
+.quote tr.tot td{font-weight:600;border-bottom:0;padding-top:8px}
+.quote .miss{color:var(--danger)}
+.o-sum small{display:block;font-size:11px;color:var(--muted);text-align:right}

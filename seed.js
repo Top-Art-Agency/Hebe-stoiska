@@ -42,11 +42,44 @@ const STOCK = { "GS-01":1, "GS-02":1, "GS-03":3, "GS-04":4, "GS-05":2, "ST-01":2
   "SD-01":60, "SD-02":30, "SD-03":8, "SD-04":4, "SD-05":20, "LD-01":6, "LD-02":2, "ZB-01":40, "ZB-02":5,
   "ZB-03":10, "ZB-04":6, "MM-01":6, "MM-02":10, "DK-01":20, "DK-02":10, "ZP-01":3, "ZP-02":3 };
 
+/* Angielskie nazwy i opisy przykładowych pozycji (panel: Ustawienia → Uzupełnij angielskie tłumaczenia) */
+export const SEED_EN = {
+  "GS-01": ["Shelving display, 3 modules with lightbox", "3 modules · shelves, lightbox, logo panel"],
+  "GS-02": ["Display wall, 3 wide modules", "3 modules · shelves, lightbox, logo panel"],
+  "GS-03": ["Bar zone", "2 bar stools, 2 high tables, plinth, round carpet"],
+  "GS-04": ["Coffee zone", "table, 2 chairs, round carpet"],
+  "GS-05": ["Make-up station", "wall with LED mirror, shelf, make-up artist chair"],
+  "ST-01": ["Bistro table", "Ø 70 × 75 cm"],
+  "ST-02": ["High cocktail table", "Ø 60 × 110 cm"],
+  "ST-03": ["Conference table", "160 × 80 × 75 cm"],
+  "SD-01": ["White chair", "45 × 52 × 82 cm"],
+  "SD-02": ["Bar stool", "Ø 38 × 80 cm"],
+  "SD-03": ["Lounge armchair", "78 × 74 × 72 cm"],
+  "SD-04": ["Two-seater sofa", "150 × 80 × 75 cm"],
+  "SD-05": ["Pouf", "Ø 45 × 45 cm"],
+  "LD-01": ["Reception counter with graphics", "100 × 50 × 105 cm"],
+  "LD-02": ["Bar counter", "200 × 60 × 110 cm"],
+  "ZB-01": ["System wall panel", "module 100 × 250 cm"],
+  "ZB-02": ["Printed fabric wall", "300 × 250 cm"],
+  "ZB-03": ["Display shelving unit", "100 × 40 × 200 cm"],
+  "ZB-04": ["Glass display case", "50 × 50 × 180 cm"],
+  "ZB-05": ["Exhibition carpet", "per 1 m²"],
+  "MM-01": ["55″ screen on a stand", "180 cm stand, HDMI"],
+  "MM-02": ["LED spotlight bar", "2 spotlights, 200 cm"],
+  "DK-01": ["Potted plant", "approx. 150 cm tall"],
+  "DK-02": ["Brochure stand", "4 A4 pockets"],
+  "ZP-01": ["Coffee machine", "espresso, 230 V"],
+  "ZP-02": ["Refrigerated display", "60 × 60 × 180 cm"],
+};
+
+/* Pozycje bez cen (te są publiczne) i ceny osobno (tylko dla admina), łączone kodem */
 export const SEED_ITEMS = RAW.map((it, i) => ({
-  kod: it.id, cat: it.cat, name: it.name, dim: it.dim, price: it.price,
+  kod: it.id, cat: it.cat, name: it.name, dim: it.dim,
+  ...(SEED_EN[it.id] ? { name_en: SEED_EN[it.id][0], dim_en: SEED_EN[it.id][1] } : {}),
   unit: it.unit || "szt.", ill: it.ill || "", img: it.img || "", wide: !!it.wide, order: (i + 1) * 10, active: true,
   ...(it.id in STOCK ? { stock: STOCK[it.id] } : {}),
 }));
+export const SEED_PRICES = Object.fromEntries(RAW.map(it => [it.id, it.price]));
 
 /* Tylko tryb demo: przykładowe rezerwacje, żeby było widać, jak wygląda dostępność.
    W trybie demo identyfikator pozycji to jej kod. */

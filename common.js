@@ -11,7 +11,10 @@ export const DEFAULT_SETTINGS = { dniWCenie: 3, doplataDzien: 0.2, vat: 0.23, za
 export const todayStr = () => { const d = new Date(); return new Date(Date.UTC(d.getFullYear(), d.getMonth(), d.getDate())).toISOString().slice(0, 10); };
 export const addDays = (s, n) => { const d = new Date(s + "T00:00:00Z"); d.setUTCDate(d.getUTCDate() + n); return d.toISOString().slice(0, 10); };
 export const daysBetween = (a, b) => Math.round((new Date(b + "T00:00:00Z") - new Date(a + "T00:00:00Z")) / 864e5);
-export const fmtD = (s, year = true) => s ? new Date(s + "T00:00:00Z").toLocaleDateString("pl-PL", { day: "numeric", month: "short", ...(year ? { year: "numeric" } : {}), timeZone: "UTC" }) : "";
+let DLOC = "pl-PL";
+/** Język dat (katalog przełącza go przy zmianie języka; panel zostaje po polsku) */
+export const setDateLocale = l => { DLOC = l; };
+export const fmtD = (s, year = true) => s ? new Date(s + "T00:00:00Z").toLocaleDateString(DLOC, { day: "numeric", month: "short", ...(year ? { year: "numeric" } : {}), timeZone: "UTC" }) : "";
 export const fmtRange = (a, b) => !a ? "" : (!b || a === b) ? fmtD(a) : `${fmtD(a, a.slice(0, 4) !== b.slice(0, 4))} – ${fmtD(b)}`;
 export const overlaps = (a1, a2, b1, b2) => a1 <= b2 && b1 <= a2;
 export const isDate = s => /^\d{4}-\d{2}-\d{2}$/.test(s || "");

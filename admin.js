@@ -5,6 +5,8 @@ const $ = id => document.getElementById(id);
 let fb = null, A = null;
 let items = [], editing = null, edImg = "", unsubOrders = null, unsubRes = null;
 let SETS = { ...DEFAULT_SETTINGS }, resList = [], resEditing = null;
+let PRICES = {};   // id pozycji → cena netto; kolekcja „ceny” jest widoczna tylko dla adminów
+const priceOf = it => PRICES[it._id] ?? (typeof it.price === "number" ? it.price : null);
 
 /* ---------- start ---------- */
 (async () => {
@@ -59,19 +61,34 @@ document.querySelector(".tabs").addEventListener("click", e => {
 });
 
 async function startApp() {
+  const s = await loadSettings(); SETS = s;
   await reloadItems();
   watchOrders();
   watchRes();
-  const s = await loadSettings(); SETS = s;
   $("s-days").value = s.dniWCenie; $("s-extra").value = Math.round(s.doplataDzien * 100); $("s-vat").value = Math.round(s.vat * 100);
   $("s-before").value = s.zapasPrzed; $("s-after").value = s.zapasPo;
 }
 
 /* ---------- pozycje ---------- */
 async function reloadItems() {
-  const snap = await fb.fs.getDocs(fb.fs.collection(fb.db, "pozycje"));
+  const { fs, db } = fb;
+  const [snap, psnap] = await Promise.all([fs.getDocs(fs.collection(db, "pozycje")), fs.getDocs(fs.collection(db, "ceny"))]);
   items = snap.docs.map(d => ({ _id: d.id, ...d.data() })).sort(byOrder);
-  renderItems();
+  PRICES = Object.fromEntries(psnap.docs.map(d => [d.id, d.data().price]));
+  await migratePrices();
+  renderItems(); renderOrders();
+}
+/** Jednorazowo: przenosi ceny zapisane dawniej w pozycjach (publicznych) do kolekcji „ceny” */
+async function migratePrices() {
+  const old = items.filter(it => "price" in it);
+  if (!old.length) return;
+  const { fs, db } = fb; const batch = fs.writeBatch(db);
+  for (const it of old) {
+    if (!(it._id in PRICES) && typeof it.price === "number") { batch.set(fs.doc(db, "ceny", it._id), { price: it.price }); PRICES[it._id] = it.price; }
+    batch.update(fs.doc(db, "pozycje", it._id), { price: fs.deleteField() });
+  }
+  try { await batch.commit(); old.forEach(it => delete it.price); }
+  catch (x) { if (!denied(x)) alertBar(`Nie udało się ukryć cen przed klientami (${x.code || x.message}). Sprawdź, czy w Firebase są nowe reguły z pliku firestore.rules.`); }
 }
 function renderItems() {
   const q = $("search").value.trim().toLowerCase();
@@ -86,8 +103,8 @@ function renderItems() {
     return `<tr data-id="${esc(it._id)}" class="${it.active === false ? "off" : ""}">
       <td><div class="thumb${it.img ? " photo" : ""}">${pic(it)}</div></td>
       <td class="kod">${esc(it.kod)}</td>
-      <td>${esc(it.name)}<span class="sub">${esc(it.cat)} · ${esc(it.dim)}</span></td>
-      <td class="num">${zl(it.price)}<span class="sub">/ ${esc(it.unit || "szt.")}</span></td>
+      <td>${esc(it.name)}<span class="sub">${esc(it.cat)} · ${esc(it.dim)}${it.name_en ? "" : " · <b>brak EN</b>"}</span></td>
+      <td class="num">${priceOf(it) == null ? `<span class="sub miss">brak ceny</span>` : zl(priceOf(it))}<span class="sub">/ ${esc(it.unit || "szt.")}</span></td>
       <td class="num">${hasStock(it) ? it.stock : `<span class="sub">bez limitu</span>`}</td>
       <td><label class="switch" title="Widoczna w katalogu"><input type="checkbox" data-act="active" ${it.active !== false ? "checked" : ""} aria-label="Widoczna: ${esc(it.name)}"><span></span></label></td>
       <td><span class="mv"><button type="button" data-act="up" ${idx === 0 || q ? "disabled" : ""} aria-label="Przesuń wyżej">↑</button><button type="button" data-act="down" ${idx === items.length - 1 || q ? "disabled" : ""} aria-label="Przesuń niżej">↓</button></span></td>
@@ -124,9 +141,13 @@ function alertBar(text) { $("noAccess").textContent = text; $("noAccess").hidden
 $("seed").addEventListener("click", async () => {
   const btn = $("seed"); btn.disabled = true; btn.textContent = "Wczytuję…";
   try {
-    const { SEED_ITEMS } = await import("./seed.js");
+    const { SEED_ITEMS, SEED_PRICES } = await import("./seed.js");
     const batch = fb.fs.writeBatch(fb.db);
-    for (const it of SEED_ITEMS) batch.set(fb.fs.doc(fb.fs.collection(fb.db, "pozycje")), it);
+    for (const it of SEED_ITEMS) {
+      const ref = fb.fs.doc(fb.fs.collection(fb.db, "pozycje"));
+      batch.set(ref, it);
+      batch.set(fb.fs.doc(fb.db, "ceny", ref.id), { price: SEED_PRICES[it.kod] ?? 0 });
+    }
     batch.set(fb.fs.doc(fb.db, "ustawienia", "ogolne"), DEFAULT_SETTINGS, { merge: true });
     await batch.commit(); await reloadItems();
   } catch (x) { if (!denied(x)) alertBar(`Nie udało się wczytać katalogu (${x.code || x.message}).`); }
@@ -144,7 +165,8 @@ function openEditor(it) {
   editing = it || null;
   $("edTitle").textContent = it ? "Edytuj pozycję" : "Nowa pozycja";
   $("edKod").value = it?.kod || ""; $("edCat").value = it?.cat || ""; $("edName").value = it?.name || "";
-  $("edDim").value = it?.dim || ""; $("edPrice").value = it?.price ?? ""; $("edUnit").value = it?.unit || "szt.";
+  $("edDim").value = it?.dim || ""; $("edPrice").value = it ? (priceOf(it) ?? "") : ""; $("edUnit").value = it?.unit || "szt.";
+  $("edNameEn").value = it?.name_en || ""; $("edDimEn").value = it?.dim_en || ""; $("edCatEn").value = it?.cat_en || "";
   $("edStock").value = it && hasStock(it) ? it.stock : "";
   $("edActive").checked = it ? it.active !== false : true; $("edWide").checked = !!it?.wide;
   $("edIll").value = it?.ill || "";
@@ -188,7 +210,8 @@ $("edForm").addEventListener("submit", async e => {
   const err = $("edErr"); err.hidden = true;
   const data = {
     kod: $("edKod").value.trim(), cat: $("edCat").value.trim(), name: $("edName").value.trim(),
-    dim: $("edDim").value.trim(), price: Math.round(Number($("edPrice").value) * 100) / 100,
+    dim: $("edDim").value.trim(),
+    name_en: $("edNameEn").value.trim(), dim_en: $("edDimEn").value.trim(), cat_en: $("edCatEn").value.trim(),
     unit: $("edUnit").value.trim() || "szt.", active: $("edActive").checked, wide: $("edWide").checked,
     ill: $("edIll").value, img: edImg,
     stock: $("edStock").value === "" ? null : Math.max(0, Math.round(Number($("edStock").value) || 0)),
@@ -199,12 +222,19 @@ $("edForm").addEventListener("submit", async e => {
   if (data.img.length > 900000) { err.textContent = "Zdjęcie jest za duże. Wybierz mniejszy plik."; err.hidden = false; return; }
   const btn = $("edSave"); btn.disabled = true; btn.textContent = "Zapisuję…";
   try {
+    const { fs, db } = fb; const batch = fs.writeBatch(db);
+    const price = Math.round(Number($("edPrice").value) * 100) / 100;
+    let ref;
     if (editing) {
-      await fb.fs.updateDoc(fb.fs.doc(fb.db, "pozycje", editing._id), data);
+      ref = fs.doc(db, "pozycje", editing._id);
+      batch.update(ref, { ...data, ...("price" in editing ? { price: fs.deleteField() } : {}) });
     } else {
       data.order = items.length ? Math.max(...items.map(i => i.order ?? 0)) + 10 : 10;
-      await fb.fs.addDoc(fb.fs.collection(fb.db, "pozycje"), data);
+      ref = fs.doc(fs.collection(db, "pozycje"));
+      batch.set(ref, data);
     }
+    batch.set(fs.doc(db, "ceny", ref.id), { price });
+    await batch.commit();
     $("editor").hidden = true; await reloadItems();
   } catch (x) {
     if (denied(x)) $("editor").hidden = true;
@@ -215,7 +245,11 @@ $("edForm").addEventListener("submit", async e => {
 $("edDelete").addEventListener("click", async () => {
   const b = $("edDelete");
   if (!b.classList.contains("armed")) { b.classList.add("armed"); b.textContent = "Kliknij ponownie, aby usunąć na stałe"; return; }
-  try { await fb.fs.deleteDoc(fb.fs.doc(fb.db, "pozycje", editing._id)); $("editor").hidden = true; await reloadItems(); }
+  try {
+    const batch = fb.fs.writeBatch(fb.db);
+    batch.delete(fb.fs.doc(fb.db, "pozycje", editing._id)); batch.delete(fb.fs.doc(fb.db, "ceny", editing._id));
+    await batch.commit(); $("editor").hidden = true; await reloadItems();
+  }
   catch (x) { if (!denied(x)) { $("edErr").textContent = `Nie udało się usunąć (${x.code || x.message}).`; $("edErr").hidden = false; } }
 });
 
@@ -228,13 +262,39 @@ function watchOrders() {
     renderOrders(); renderRes();
   }, x => { denied(x); $("orders").innerHTML = `<p class="muted">Nie udało się wczytać zapytań.</p>`; });
 }
+/** Kosztorys zapytania z aktualnych cen (kolekcja „ceny”) i ustawień dni/VAT */
+function quote(o) {
+  let sum = 0, missing = 0;
+  const lines = (o.items || []).map(i => {
+    const p = PRICES[i.id] ?? (typeof i.price === "number" ? i.price : null);
+    if (p == null) missing++;
+    const v = (p || 0) * (Number(i.qty) || 0); sum += v;
+    return { ...i, p, v };
+  });
+  const days = Number(o.days) || 1;
+  const extraDays = Math.max(0, days - SETS.dniWCenie);
+  const extra = sum * SETS.doplataDzien * extraDays;
+  const net = sum + extra, vat = net * SETS.vat;
+  return { lines, sum, extra, extraDays, days, net, vat, gross: net + vat, missing };
+}
+function quoteHTML(o) {
+  const q = quote(o);
+  return `<table class="quote"><tbody>
+    ${q.lines.map(l => `<tr><td>${esc(l.kod || "")} ${esc(l.name)} × ${l.qty}</td><td class="num">${l.p == null ? `<span class="miss">brak ceny</span>` : `${zl(l.p)} × ${l.qty}`}</td><td class="num">${zl(l.v)}</td></tr>`).join("")}
+    <tr><td colspan="2">Elementy netto</td><td class="num">${zl(q.sum)}</td></tr>
+    <tr><td colspan="2">Dopłata: ${q.extraDays} ${q.extraDays === 1 ? "dzień" : "dni"} ponad ${SETS.dniWCenie} (wydarzenie ${q.days} ${q.days === 1 ? "dzień" : "dni"})</td><td class="num">${zl(q.extra)}</td></tr>
+    <tr><td colspan="2">Razem netto</td><td class="num">${zl(q.net)}</td></tr>
+    <tr><td colspan="2">VAT ${Math.round(SETS.vat * 100)}%</td><td class="num">${zl(q.vat)}</td></tr>
+    <tr class="tot"><td colspan="2">Razem brutto</td><td class="num">${zl(q.gross)}</td></tr>
+  </tbody></table><p class="note">Liczone z aktualnych cen pozycji i ustawień. Transport, montaż i grafika nie są wliczone.</p>`;
+}
 const fmtDate = ts => ts?.toDate ? ts.toDate().toLocaleString("pl-PL", { dateStyle: "medium", timeStyle: "short" }) : "przed chwilą";
 function renderOrders() {
   const nNew = orders.filter(o => o.status === "nowe").length;
   $("cOrders").textContent = nNew; $("cOrders").hidden = nNew === 0;
   const f = $("oFilter").value;
   const list = orders.filter(o => !f || o.status === f);
-  if (!list.length) { $("orders").innerHTML = `<p class="muted">${orders.length ? "Brak zapytań o tym statusie." : "Nie ma jeszcze żadnych zapytań. Pojawią się tu, gdy klient wyśle kosztorys."}</p>`; return; }
+  if (!list.length) { $("orders").innerHTML = `<p class="muted">${orders.length ? "Brak zapytań o tym statusie." : "Nie ma jeszcze żadnych zapytań. Pojawią się tu, gdy klient wyśle listę elementów."}</p>`; return; }
   $("orders").innerHTML = list.map(o => {
     const its = (o.items || []).map(i => `${i.qty}× ${i.name}`).join(", ");
     const subj = encodeURIComponent("Re: " + (o.subject || "Zapytanie o stoisko"));
@@ -242,7 +302,7 @@ function renderOrders() {
     return `<article class="order st-${esc(o.status)}" data-id="${esc(o._id)}">
       <div class="o-head">
         <div class="o-who">${esc(o.event || o.name)} <span>${esc(o.event ? o.name : "")}${o.company ? " · " + esc(o.company) : ""}</span></div>
-        <div class="o-sum">${zl(o.net)} netto</div>
+        ${(() => { const q = quote(o); return `<div class="o-sum">${zl(q.net)} netto<small>${zl(q.gross)} brutto${q.missing ? " · brak cen części pozycji" : ""}</small></div>`; })()}
       </div>
       ${term}
       <div class="o-meta">wysłano ${esc(fmtDate(o.created))} · ${esc(o.email)}${o.phone ? " · " + esc(o.phone) : ""}</div>
@@ -250,11 +310,11 @@ function renderOrders() {
       <div class="o-actions">
         ${o.status === "nowe" ? `<button class="btn sm" type="button" data-act="accept">Akceptuj rezerwację</button>` : ""}
         <select data-act="status" aria-label="Status">${Object.entries(ORDER_STATUS).map(([v, l]) => `<option value="${v}" ${v === o.status ? "selected" : ""}>${l}</option>`).join("")}</select>
-        <button class="btn ghost sm" type="button" data-act="toggle">Pokaż treść</button>
+        <button class="btn ghost sm" type="button" data-act="toggle">Kosztorys i treść</button>
         <a href="mailto:${esc(o.email)}?subject=${subj}">Odpowiedz</a>
         <button class="btn danger sm" type="button" data-act="del">Usuń</button>
       </div>
-      <pre class="mail" hidden>${esc(o.body)}</pre>
+      <div class="o-more" hidden>${quoteHTML(o)}${o.lang === "en" ? `<p class="note">Klient korzystał z wersji angielskiej katalogu.</p>` : ""}<pre class="mail">${esc(o.body)}</pre></div>
     </article>`;
   }).join("");
 }
@@ -282,7 +342,7 @@ $("oFilter").addEventListener("change", renderOrders);
 $("orders").addEventListener("click", async e => {
   const b = e.target.closest("[data-act]"); if (!b) return;
   const card = b.closest(".order"); const id = card.dataset.id; const o = orders.find(x => x._id === id);
-  if (b.dataset.act === "toggle") { const p = card.querySelector("pre"); p.hidden = !p.hidden; b.textContent = p.hidden ? "Pokaż treść" : "Ukryj treść"; }
+  if (b.dataset.act === "toggle") { const p = card.querySelector(".o-more"); p.hidden = !p.hidden; b.textContent = p.hidden ? "Kosztorys i treść" : "Zwiń"; }
   if (b.dataset.act === "accept") {
     b.disabled = true;
     try { await setStatus(o, "zaakceptowane"); } catch (x) { b.disabled = false; if (!denied(x)) alertBar(`Nie udało się zaakceptować (${x.code || x.message}).`); }
@@ -448,6 +508,26 @@ $("settings").addEventListener("submit", async e => {
   const d = Math.max(1, Math.round(Number($("s-days").value) || 1));
   const data = { dniWCenie: d, doplataDzien: Math.max(0, Number($("s-extra").value) || 0) / 100, vat: Math.max(0, Number($("s-vat").value) || 0) / 100,
     zapasPrzed: Math.max(0, Math.round(Number($("s-before").value) || 0)), zapasPo: Math.max(0, Math.round(Number($("s-after").value) || 0)) };
-  try { await fb.fs.setDoc(fb.fs.doc(fb.db, "ustawienia", "ogolne"), data, { merge: true }); SETS = { ...SETS, ...data }; $("s-msg").textContent = "Zapisano. Katalog pokaże nowe wartości po odświeżeniu."; }
+  try { await fb.fs.setDoc(fb.fs.doc(fb.db, "ustawienia", "ogolne"), data, { merge: true }); SETS = { ...SETS, ...data }; renderOrders(); $("s-msg").textContent = "Zapisano. Katalog pokaże nowe wartości po odświeżeniu."; }
   catch (x) { if (!denied(x)) $("s-msg").textContent = `Nie udało się zapisać (${x.code || x.message}).`; }
+});
+
+/* ---------- angielskie tłumaczenia przykładowych pozycji ---------- */
+$("fillEn").addEventListener("click", async () => {
+  const btn = $("fillEn"), msg = $("fillEnMsg"); btn.disabled = true; msg.textContent = "Uzupełniam…";
+  try {
+    const { SEED_EN } = await import("./seed.js");
+    const batch = fb.fs.writeBatch(fb.db); let n = 0;
+    for (const it of items) {
+      const tr = SEED_EN[it.kod]; if (!tr) continue;
+      const upd = {};
+      if (!it.name_en) upd.name_en = tr[0];
+      if (!it.dim_en) upd.dim_en = tr[1];
+      if (Object.keys(upd).length) { batch.update(fb.fs.doc(fb.db, "pozycje", it._id), upd); n++; }
+    }
+    if (n) await batch.commit();
+    await reloadItems();
+    msg.textContent = n ? `Uzupełniono ${n} pozycji. Pozostałe mają już tłumaczenie albo nie pochodzą z przykładowego katalogu.` : "Wszystkie pasujące pozycje mają już tłumaczenie.";
+  } catch (x) { if (!denied(x)) msg.textContent = `Nie udało się zapisać (${x.code || x.message}).`; else msg.textContent = ""; }
+  btn.disabled = false;
 });

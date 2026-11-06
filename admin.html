@@ -86,6 +86,12 @@
         <p class="toast" id="s-msg"></p>
       </form>
       <p class="note">Adres, na który przychodzą zapytania, ustawiasz w Web3Forms (klucz w pliku config.js).</p>
+      <div class="settings tools">
+        <h3>Wersja angielska</h3>
+        <p class="note">Uzupełnia angielskie nazwy i opisy pozycji z przykładowego katalogu (po kodzie, np. ST-01). Pola, które już wypełniłeś, zostają bez zmian.</p>
+        <button class="btn ghost sm" type="button" id="fillEn">Uzupełnij angielskie tłumaczenia</button>
+        <p class="toast" id="fillEnMsg"></p>
+      </div>
     </section>
   </div>
 </div>
@@ -111,7 +117,10 @@
           <label>Kategoria<input id="edCat" list="catList" required placeholder="np. Stoły"></label>
           <label class="full">Nazwa<input id="edName" required></label>
           <label class="full">Opis / wymiary<textarea id="edDim" rows="2" placeholder="np. Ø 70 × 75 cm"></textarea></label>
-          <label>Cena netto (zł)<input id="edPrice" type="number" min="0" step="0.01" required></label>
+          <label class="full">Nazwa po angielsku (EN)<input id="edNameEn" placeholder="widoczna w wersji angielskiej katalogu"></label>
+          <label class="full">Opis po angielsku (EN)<textarea id="edDimEn" rows="2" placeholder="np. Ø 70 × 75 cm"></textarea></label>
+          <label>Kategoria po angielsku (EN)<input id="edCatEn" placeholder="np. Tables"></label>
+          <label>Cena netto (zł) <span class="lock">tylko dla zespołu</span><input id="edPrice" type="number" min="0" step="0.01" required></label>
           <label>Jednostka<input id="edUnit" list="unitList" placeholder="szt."></label>
           <label>Stan magazynowy<input id="edStock" type="number" min="0" step="1" placeholder="bez limitu"></label>
           <p class="note hint">Ile sztuk macie fizycznie. Klient nie doda więcej. Puste pole = bez limitu.</p>

@@ -88,3 +88,9 @@ Nowa kategoria powstaje sama, gdy wpiszesz jej nazwę w pozycji. Kolejność kat
 ## Bezpieczeństwo
 
 Dane w `config.js` są widoczne publicznie i tak ma być. Bazę chronią reguły z `firestore.rules`: każdy może czytać katalog i rezerwacje oraz wysłać zapytanie, ale tylko konto o Twoim UID może zmieniać pozycje oraz czytać zapytania klientów. Panel `admin.html` jest dostępny pod adresem dla każdego, ale bez logowania niczego nie pokaże ani nie zmieni.
+
+## Ceny i wersja angielska
+
+- **Klient nie widzi cen.** Katalog pokazuje tylko elementy, ich dostępność i liczbę sztuk. Ceny są w osobnej kolekcji bazy `ceny`, którą czytają wyłącznie admini. Kosztorys (netto, dopłata za dni, VAT, brutto) liczy panel w zakładce Zapytania, przycisk „Kosztorys i treść”. Mail z zapytaniem nie zawiera kwot.
+- Przy pierwszym logowaniu po aktualizacji panel sam przenosi ceny ze starych pozycji do kolekcji `ceny`. Wymaga to nowych reguł z pliku `firestore.rules`.
+- **Wersja angielska:** klient przełącza język przyciskami PL / EN w prawym górnym rogu. Angielską nazwę, opis i kategorię pozycji wpisujesz w edycji pozycji (pola „EN”); bez nich klient zobaczy polski tekst. Przycisk „Uzupełnij angielskie tłumaczenia” w Ustawieniach wypełnia je dla przykładowego katalogu. Mail z zapytaniem jest zawsze po polsku i podaje język klienta.

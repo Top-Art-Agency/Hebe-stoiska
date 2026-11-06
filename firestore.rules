@@ -24,9 +24,14 @@ service cloud.firestore {
       allow read: if true;
       allow write: if isAdmin()
         && request.resource.data.name is string
-        && request.resource.data.price is number
+        && !('price' in request.resource.data)
         && (!('img' in request.resource.data) || request.resource.data.img.size() < 950000);
       allow delete: if isAdmin();
+    }
+
+    // Ceny: tylko dla adminów. Klienci ich nie widzą.
+    match /ceny/{id} {
+      allow read, write: if isAdmin();
     }
 
     // Ustawienia (dni, dopłata, VAT): każdy czyta, zmienia tylko admin
@@ -38,7 +43,7 @@ service cloud.firestore {
     // Zapytania klientów: każdy może WYSŁAĆ, tylko admin czyta i zmienia
     match /zapytania/{id} {
       allow create: if request.resource.data.keys().hasOnly(
-            ['created','status','subject','name','company','email','phone','event','size','notes','days','items','net','gross','body',
+            ['created','status','subject','lang','name','company','email','phone','event','size','notes','days','items','body',
              'dateFrom','dateTo','resFrom','resTo'])
         && isDay(request.resource.data.dateFrom) && isDay(request.resource.data.dateTo)
         && isDay(request.resource.data.resFrom) && isDay(request.resource.data.resTo)
@@ -48,8 +53,7 @@ service cloud.firestore {
         && request.resource.data.email is string && request.resource.data.email.matches('^[^@\\s]+@[^@\\s]+\\.[^@\\s]+$')
         && request.resource.data.body is string && request.resource.data.body.size() < 30000
         && request.resource.data.notes is string && request.resource.data.notes.size() < 5000
-        && request.resource.data.items is list && request.resource.data.items.size() > 0 && request.resource.data.items.size() <= 300
-        && request.resource.data.net is number && request.resource.data.gross is number;
+        && request.resource.data.items is list && request.resource.data.items.size() > 0 && request.resource.data.items.size() <= 300;
       allow read, update, delete: if isAdmin();
     }
 
